@@ -174,24 +174,40 @@ class MiniCssExtractPlugin {
           const renderedModules = Array.from(chunk.modulesIterable).filter(
             (module) => module.type === MODULE_TYPE
           );
+          let compiled;
 
           if (renderedModules.length > 0) {
-            result.push({
-              render: () =>
-                this.renderContentAsset(
-                  compilation,
+            compiled = () => this.renderContentAsset(
+              compilation,
+              chunk,
+              renderedModules,
+              compilation.runtimeTemplate.requestShortener
+            );
+            
+            var children = compiled.children;
+            var themes = {};
+            
+            for (var count = 0; count < children.length; count++) {
+              if (children[count] && children[count]._name && children[count]._name.indexOf("theme-") >= 0) {
+                var themeName = children[count]._name.search(/theme-(.*?)/)
+                
+                themes[themeName] = themes[themeName] || {};
+                themes[themeName].push(children[count]);
+              }
+            }
+            
+            for (var theme in themes) {
+              result.push({
+                render: theme,
+                filenameTemplate: this.options.chunkFilename + theme,
+                pathOptions: {
                   chunk,
-                  renderedModules,
-                  compilation.runtimeTemplate.requestShortener
-                ),
-              filenameTemplate: this.options.chunkFilename,
-              pathOptions: {
-                chunk,
-                contentHashType: MODULE_TYPE,
-              },
-              identifier: `${pluginName}.${chunk.id}`,
-              hash: chunk.contentHash[MODULE_TYPE],
-            });
+                  contentHashType: MODULE_TYPE,
+                },
+                identifier: `${pluginName}.${chunk.id}`,
+                hash: chunk.contentHash[MODULE_TYPE],
+              }); 
+            }
           }
         }
       );
@@ -332,7 +348,7 @@ class MiniCssExtractPlugin {
                 'promises.push(installedCssChunks[chunkId] = new Promise(function(resolve, reject) {',
                 Template.indent([
                   `var href = ${linkHrefPath};`,
-                  `var fullhref = ${mainTemplate.requireFn}.p + href;`,
+                  `var fullhref = ${localStorage.getItem("theme")} ${mainTemplate.requireFn}.p + href;`,
                   'var existingLinkTags = document.getElementsByTagName("link");',
                   'for(var i = 0; i < existingLinkTags.length; i++) {',
                   Template.indent([
