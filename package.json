@@ -12,6 +12,7 @@
     "node": ">= 6.9.0"
   },
   "scripts": {
+    "build": "echo 123",
     "start": "npm run build -- -w",
     "postbuild": "es-check es5 dist/hmr/hotModuleReplacement.js",
     "clean": "del-cli dist",
